@@ -2,6 +2,7 @@
 
 #ifndef COMMANDS_H
 #define COMMANDS_H
+#include "commons.h"
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -19,7 +20,7 @@
 typedef struct {
   char key;
   void (*func)(int serverfd, int clientfd, int threadId, char *buff);
-  char *usage;
+  char usage[MAX_MESSAGE_LENGTH];
 } Command;
 
 

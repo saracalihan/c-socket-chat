@@ -53,20 +53,54 @@ void* listen_inet(void*args){
     
     User* user = &(users[id]);
     user->socket = client;
+    user->name = malloc(sizeof(char) *MAX_MESSAGE_LENGTH);
     user->messages = malloc(sizeof(char) *MAX_MESSAGE_LENGTH*MESSAGE_HISTORY_LENGTH);
     // memset(user->messages, 0, sizeof(char) * MAX_MESSAGE_LENGTH*MESSAGE_HISTORY_LENGTH);
-    printf("id: %d\n", id);
     user->message_count =0;
     printf("[THREAD-%d] Thread initialized to %i\n", id, client );
     while (!startListenders) {
         printf("[THREAD-%d] wait to start\n", id);
     }
     printf("[THREAD-%d] Start to listening\n", id);
+
+    char welcomeMsg[] = "Welcome to the aplication\n";
+    send(client, welcomeMsg, strlen(welcomeMsg),0);
+    // Set user name
+    bool isUsernameSetted = false;
+    while (!isUsernameSetted) {
+        char msg[50] = "Enter your name: ";
+        char username[MAX_MESSAGE_LENGTH] = {0};
+        send(client, msg, strlen(msg), 0);
+        recv(client, username, MAX_MESSAGE_LENGTH,0);
+
+        for (int i=0; i< threatCount; i++) {
+            int isUsed = strcmp(users[i].name, &username);
+            if ( avaibleListeners[i] == false ) {
+                // If username is already exist, break
+                if(isUsed ==0){
+                    break;
+                // Else if now, i am on the last user and username not using, set username. Else
+                } else if(i +1 == threatCount ){
+                    strcpy(user->name, &username);
+                    isUsernameSetted = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    printf("[THREAD-%d] username: %s\n", id, user->name);
+
+    char* hello = malloc(sizeof(char) * MAX_MESSAGE_LENGTH);
+    sprintf(hello,"Hello %s. Write /? for commands or /q for quit\n", user->name);
+    send(client, hello , strlen(hello), 0);
+    free(hello);
+
     bool isConnectedToUser= false;
     while (avaibleListeners[id] == false  && sockets[id] != -1) {
         char buf[MAX_MESSAGE_LENGTH] = {0};
         recv(client, buf, MAX_MESSAGE_LENGTH, 0);
-        printf("[RECIVED-%d]: %s\n",id, buf);
+        printf("[RECIVED-%d]: %s",id, buf);
 
 
         strcpy(&user->messages[user->message_count*MAX_MESSAGE_LENGTH], buf);
@@ -116,7 +150,7 @@ int main()
         printf("\ncan't catch SIG\n");
 
     memset(&sockets, -1, sizeof(sockets));
-    memset(&avaibleListeners, 0, sizeof(avaibleListeners));
+    memset(&avaibleListeners, 1, sizeof(avaibleListeners));
 
     pthread_t threads[MAX_CONN] = {0};
 
