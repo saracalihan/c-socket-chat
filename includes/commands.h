@@ -1,11 +1,14 @@
 
 
-#ifndef COMMANDS_H
-#define COMMANDS_H
-#include "commons.h"
+#ifndef _COMMANDS_H
+#define _COMMANDS_H
+
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
+#include "commons.h"
+#include "user.h"
+
 
 #define USAGE                                                                  \
   "C server example\n\t"                                                       \

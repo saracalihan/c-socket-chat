@@ -1,5 +1,4 @@
 #include "commands.h"
-#include "commons.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,9 +41,9 @@ void close_connection_fn(int serverfd, int client, int thread, char *buf){
 
 void send_history_message_fn(int serverfd, int client, int thread, char *buf){
   User user = users[thread];
-  size_t stringSize = sizeof(char) * user.message_count * MAX_MESSAGE_LENGTH;
+  size_t stringSize = sizeof(char) * user.historyCount * MAX_MESSAGE_LENGTH;
   char* history = malloc(stringSize);
-  memcpy(history, user.messages, stringSize);
+  memcpy(history, user.history, stringSize);
   send(client, history, stringSize, 0);
   free(history);
 }

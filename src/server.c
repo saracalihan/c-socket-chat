@@ -13,12 +13,14 @@
 #include <stdbool.h>
 #include <signal.h>
 
-#include "commons.h"
 #include "commands.h"
+#include "commons.h"
 
 #define PORT 3000
 int socketfd = -1;
 bool startListenders = false;
+
+CreateDynamicArrayFunctions(Messages)
 
 void print_error(char* message){
     fprintf(stderr, "[ERROR] %s: %m", message);
@@ -50,13 +52,15 @@ void* listen_inet(void*args){
         client = ((int*)args)[1];
     avaibleListeners[id] = false;
     sockets[id] = client;
-    
+
     User* user = &(users[id]);
     user->socket = client;
     user->name = malloc(sizeof(char) *MAX_MESSAGE_LENGTH);
-    user->messages = malloc(sizeof(char) *MAX_MESSAGE_LENGTH*MESSAGE_HISTORY_LENGTH);
-    // memset(user->messages, 0, sizeof(char) * MAX_MESSAGE_LENGTH*MESSAGE_HISTORY_LENGTH);
-    user->message_count =0;
+    user->history = malloc(sizeof(char) *MAX_MESSAGE_LENGTH*MESSAGE_HISTORY_LENGTH);
+    // memset(user->history, 0, sizeof(char) * MAX_MESSAGE_LENGTH*MESSAGE_HISTORY_LENGTH);
+    user->historyCount =0;
+    user->messageBox = da_Messages_create(DEFAULT_MESSAGEBOX_CAPACITY);
+
     printf("[THREAD-%d] Thread initialized to %i\n", id, client );
     while (!startListenders) {
         printf("[THREAD-%d] wait to start\n", id);
@@ -103,8 +107,8 @@ void* listen_inet(void*args){
         printf("[RECIVED-%d]: %s",id, buf);
 
 
-        strcpy(&user->messages[user->message_count*MAX_MESSAGE_LENGTH], buf);
-        user->message_count++;
+        strcpy(&user->history[user->historyCount*MAX_MESSAGE_LENGTH], buf);
+        user->historyCount++;
 
         if(isConnectedToUser){
             //mesaj işlemleri
@@ -139,12 +143,11 @@ void* listen_inet(void*args){
         }
 
     }
-
+    return;
 }
 
 int main()
 {
-
     int port = PORT;
     if (signal(SIGINT, &close_connections) == SIG_ERR || signal(SIGQUIT, &close_connections) == SIG_ERR || signal(SIGQUIT, &close_connections) == SIG_ERR)
         printf("\ncan't catch SIG\n");
@@ -164,7 +167,7 @@ int main()
     struct sockaddr_in address = {
         AF_INET,
         htons(port),
-        0
+        0 
     };
 
     // SOCKET BINDING
