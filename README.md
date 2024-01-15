@@ -2,7 +2,8 @@
 
 This is socket and multi-thread proof of concept example.
 
-> [!WARNING] This project is under development. DON'T USE in real world!
+> [!WARNING]
+> This project is under development. DON'T USE in real world!
 
 **Table of Contents**:
 
@@ -40,6 +41,7 @@ cd c-server
 ### Run Code
 
 **Defines**:
+
 You can change those variables what you want. Add `-D<variable-name>=<value>` to `FLAGS` variables at `makefile`
 
 > Example: `-DPORT=8080`
@@ -49,7 +51,10 @@ You can change those variables what you want. Add `-D<variable-name>=<value>` to
 `MAX_CONN`: Maximmum connection count. Default value is `10`
 
 **Compile and Run:**
+
 `make` command compile `src/server.c` file to `bin` folder then run `bin/program` executable.
+
+Execute `./bin/program` binary when you want to listen server.
 
 ## Application Usage
 
