@@ -17,6 +17,7 @@
   "example usage: /c username\n\t"                                              \
   "/b: Broadcast message\n\t\t"                                                 \
   "example usage: -Hello everyone\n\t"                                         \
+  "/l: List online users\n\t"\
   "/q: Close connection\n\t"                                                    \
   "/h: Get message history\n"
 
@@ -28,6 +29,7 @@ typedef struct {
 
 
 void send_message_fn(int serverfd, int client, int thread, char *buf);
+void list_user_fn(int serverfd, int client, int thread, char *buf);
 void send_help_message_fn(int serverfd, int client, int thread, char *buf);
 void send_broadcast_message_fn(int serverfd, int client, int thread, char *buf);
 void close_connection_fn(int serverfd, int client, int thread, char *buf);
@@ -40,6 +42,10 @@ static Command commands[] = {
     .usage = "[COMMAND] Help\n",
   },
   {
+   .key = 'c',
+    .func = &send_message_fn,
+    .usage = "[COMMAND] Connect to user\n",
+  },  {
    .key = 'b',
     .func = &send_broadcast_message_fn,
     .usage = "[COMMAND] Broadcast Message\n",
@@ -48,6 +54,11 @@ static Command commands[] = {
    .key = 'h',
     .func = &send_history_message_fn,
     .usage = "[COMMAND] History\n",
+  },
+  {
+   .key = 'l',
+    .func = &list_user_fn,
+    .usage = "[COMMAND] List users\n",
   },
   {
    .key = 'q',

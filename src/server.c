@@ -37,7 +37,7 @@ void close_connections(int){
         printf("[INFO] Socket %d closed %i\n", i, sockets[i]);
     }
     if(socketfd != -1){
-        close(socketfd);
+        shutdown(socketfd ,SHUT_RDWR);
         printf("[INFO] Server socket closed\n");
     }
     exit(0);
@@ -50,14 +50,22 @@ int bind_socket(int socket, struct sockaddr_in* address){
 void* listen_inet(void*args){
     int id = ((int*)args)[0],
         client = ((int*)args)[1];
-    avaibleListeners[id] = false;
-    sockets[id] = client;
 
+
+    if(fd_is_valid(client) == 0){
+        fprintf(stderr, "[ERROR] Thread %d client fd(%d) is invalid\n!", id, client);
+        pthread_exit(0);
+        return NULL;
+    }
+    avaibleListeners[id] = false;
+
+    // Init user
+    sockets[id] = client;
     User* user = &(users[id]);
     user->socket = client;
     user->name = malloc(sizeof(char) *MAX_MESSAGE_LENGTH);
     user->history = malloc(sizeof(char) *MAX_MESSAGE_LENGTH*MESSAGE_HISTORY_LENGTH);
-    // memset(user->history, 0, sizeof(char) * MAX_MESSAGE_LENGTH*MESSAGE_HISTORY_LENGTH);
+    memset(user->history, 0, BYTE_OF_MAX_MESSAGE*MESSAGE_HISTORY_LENGTH);
     user->historyCount =0;
     user->messageBox = da_Messages_create(DEFAULT_MESSAGEBOX_CAPACITY);
 
@@ -67,7 +75,7 @@ void* listen_inet(void*args){
     }
     printf("[THREAD-%d] Start to listening\n", id);
 
-    char welcomeMsg[] = "Welcome to the aplication\n";
+    char welcomeMsg[] = "Welcome to the application\n";
     send(client, welcomeMsg, strlen(welcomeMsg),0);
     // Set user name
     bool isUsernameSetted = false;
@@ -76,6 +84,7 @@ void* listen_inet(void*args){
         char username[MAX_MESSAGE_LENGTH] = {0};
         send(client, msg, strlen(msg), 0);
         recv(client, username, MAX_MESSAGE_LENGTH,0);
+        new_line_to_null(&username);
 
         for (int i=0; i< threatCount; i++) {
             int isUsed = strcmp(users[i].name, &username);
@@ -95,8 +104,9 @@ void* listen_inet(void*args){
 
     printf("[THREAD-%d] username: %s\n", id, user->name);
 
-    char* hello = malloc(sizeof(char) * MAX_MESSAGE_LENGTH);
-    sprintf(hello,"Hello %s. Write /? for commands or /q for quit\n", user->name);
+    // Welcome message
+    char* hello = malloc(BYTE_OF_MAX_MESSAGE);
+    sprintf(hello,"Hello %s.\nWrite /? for commands or /q for quit\n", user->name);
     send(client, hello , strlen(hello), 0);
     free(hello);
 
@@ -104,20 +114,17 @@ void* listen_inet(void*args){
     while (avaibleListeners[id] == false  && sockets[id] != -1) {
         char buf[MAX_MESSAGE_LENGTH] = {0};
         recv(client, buf, MAX_MESSAGE_LENGTH, 0);
-        printf("[RECIVED-%d]: %s",id, buf);
 
+        // Convert \n to \0
+        buf[strlen(buf)-1] = '\0';
+        printf("[RECIVED-%d]: %s",id, buf);
 
         strcpy(&user->history[user->historyCount*MAX_MESSAGE_LENGTH], buf);
         user->historyCount++;
 
-        if(isConnectedToUser){
-            //mesaj işlemleri
-            continue;
-        }
-
         if(buf[0] !='/'){
             char errorMsg[] ="[ERROR] Wrong command: ";
-            strcat(errorMsg, buf);
+            sprintf(&errorMsg, "%s %s\n", errorMsg, buf);
             send(client, errorMsg, strlen(errorMsg) , 0);
             send_help_message_fn(socketfd, client, id, buf);
             continue;
@@ -131,7 +138,7 @@ void* listen_inet(void*args){
                 }
 
                 char errorMsg[] = "[ERROR] Unknown command: ";
-                strcat(errorMsg, buf);
+                sprintf(&errorMsg, "%s %s\n", errorMsg, buf);
                 send(client, errorMsg, strlen(errorMsg),0);
 
                 break;
